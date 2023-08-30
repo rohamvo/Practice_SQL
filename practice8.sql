@@ -1,0 +1,189 @@
+-- Top-N 쿼리
+-- 순위로 N위까지 추출하겠다는 쿼리
+
+-- ROWNUM
+/*
+ROWNUJM은 SELECT 절에 추가하여 행의 번호를 작성해준다. ROWNUM은 행이 반환될 때마다 순번이 1씩 증가하기 때문에
+WEHRE ROWNUM = 5 와 같은 조건은 성립될 수 없다. ROWNUM은 항상 < 조건이나 <= 조건으로 사용해야 한다.(>, >= 불가)
+*/
+
+SELECT ROWNUM, TITLE, COUNT_DT, DOWNLOAD_CNT FROM SSAK3 WHERE ROWNUM < 5;
+
+-- 윈도우 함수의 순위 함수
+-- 윈도우 함수의 순위 함수를 이용하여 Top-N 쿼리를 작성할 수 있다.
+
+SELECT * FROM
+(SELECT ROW_NUMBER() OVER(ORDER BY DOWNLOAD_CNT DESC) AS R_NUM, TITLE, COUNT_DT, DOWNLOAD_CNT FROM SSAK3)
+WHERE R_NUM <= 5;
+
+SELECT * FROM
+(SELECT RANK() OVER(ORDER BY DOWNLOAD_CNT DESC) AS R_NUM, TITLE, COUNT_DT, DOWNLOAD_CNT FROM SSAK3)
+WHERE R_NUM <= 5;
+
+SELECT * FROM
+(SELECT DENSE_RANK() OVER(ORDER BY DOWNLOAD_CNT DESC) AS R_NUM, TITLE, COUNT_DT, DOWNLOAD_CNT FROM SSAK3)
+WHERE R_NUM <= 5;
+
+-- 셀프 조인(Self Join)
+/*
+셀프 조인은 말 그대로 나 자신과의 조인이다. FROM 절에 같은 테이블이 두 번 이상 등장하기 때문에
+혼란을 막기 위해 ALIAS(별칭)를 반드시 표기해주어야 한다.
+*/
+
+CREATE TABLE CATEGORY (CATEGORY_TYPE VARCHAR(40), CATEGORY_NAME VARCHAR(40), PARENT_CATEGORY VARCHAR(40));
+
+INSERT ALL
+INTO CATEGORY VALUES('대', '컴퓨터/디지털/가전', NULL)
+INTO CATEGORY VALUES('중', '컴퓨터', '컴퓨터/디지털/가전')
+INTO CATEGORY VALUES('중', '디지털', '컴퓨터/디지털/가전')
+INTO CATEGORY VALUES('중', '가전', '컴퓨터/디지털/가전')
+INTO CATEGORY VALUES('소', '노트북/PC', '컴퓨터')
+INTO CATEGORY VALUES('소', '모니터/프린터', '컴퓨터')
+INTO CATEGORY VALUES('소', '모바일/태블릿', '디지털')
+INTO CATEGORY VALUES('소', '카메라', '디지털')
+INTO CATEGORY VALUES('소', '영상가전', '가전')
+INTO CATEGORY VALUES('소', '음향가전', '가전')
+SELECT * FROM DUAL;
+
+SELECT A.CATEGORY_TYPE, A.CATEGORY_NAME,
+B.CATEGORY_TYPE, B.CATEGORY_NAME, B.PARENT_CATEGORY
+FROM CATEGORY A, CATEGORY B
+WHERE A.CATEGORY_NAME = B.PARENT_CATEGORY;
+
+SELECT
+A.CATEGORY_TYPE,
+A.CATEGORY_NAME,
+B.CATEGORY_TYPE,
+B.CATEGORY_NAME,
+C.CATEGORY_TYPE,
+C.CATEGORY_NAME
+FROM CATEGORY A, CATEGORY B, CATEGORY C
+WHERE A.CATEGORY_NAME = B.PARENT_CATEGORY
+AND B.CATEGORY_NAME = C.PARENT_CATEGORY;
+
+-- 계층 쿼리
+-- 테이블에 계층 구조를 이루는 컬럼이 존재할 경우 계층 쿼리를 이용해서 데이터를 출력할 수 있다.
+
+SELECT LEVEL, CATEGORY_TYPE AS T, CATEGORY_NAME AS N, PARENT_CATEGORY AS P,
+        SYS_CONNECT_BY_PATH('('||CATEGORY_TYPE||')'|| CATEGORY_NAME, '-') AS PATH
+    FROM CATEGORY
+START WITH PARENT_CATEGORY IS NULL
+CONNECT BY PRIOR CATEGORY_NAME = PARENT_CATEGORY
+ORDER BY LEVEL;
+
+SELECT LEVEL, CATEGORY_TYPE AS T, CATEGORY_NAME AS NAME, PARENT_CATEGORY AS P,
+        SYS_CONNECT_BY_PATH('('||CATEGORY_TYPE||')'|| CATEGORY_NAME, '-') AS PATH
+    FROM CATEGORY
+START WITH PARENT_CATEGORY IS NULL
+CONNECT BY PRIOR CATEGORY_NAME = PARENT_CATEGORY
+ORDER SIBLINGS BY NAME ASC;
+
+SELECT LEVEL, CATEGORY_TYPE AS T, CATEGORY_NAME AS NAME, PARENT_CATEGORY AS P,
+        SYS_CONNECT_BY_PATH('('||CATEGORY_TYPE||')'|| CATEGORY_NAME, '-') AS PATH
+    FROM CATEGORY
+START WITH CATEGORY_TYPE = '소'
+CONNECT BY CATEGORY_NAME = PRIOR PARENT_CATEGORY
+ORDER BY LEVEL;
+
+SELECT NO, TITLE, COUNT_DT, DOWNLOAD_CNT, MIN(DOWNLOAD_CNT) OVER(PARTITION BY NO ORDER BY DOWNLOAD_CNT) AS MIN_DOWN FROM SSAK3;
+
+-- DML(Data Manipulation Language)
+-- DDL(Data Definition Language)에서 정의한 대로 데이터를 입력하고. 입력된 데이터를 수정, 삭제, 조회하는 명령어이다.
+
+-- INSERT
+-- 테이블에 데이터를 입력하는 명령어 
+-- INSERT INTO 테이블명 (컬럼명1, 컬럼명2, ...) VALUES(데이터1, 데이터2, ...)
+-- INSERT INTO 테이블명 VALUES(전체 컬럼에 입력될 데이터 리스트)
+CREATE TABLE TEST4 (COL1 VARCHAR(20), COL2 VARCHAR(20));
+
+INSERT INTO TEST4 (COL1, COL2) VALUES('A', 'B');
+-- 위 방식을 사용했을 때 명시되지 않은 컬럼에는 NULL값이 입력된다.
+INSERT INTO TEST4 VALUES('C', 'D');
+-- 위 방식을 사용했을때 데이터 유형이 맞지 않거나 전체 컬럼 갯수와 맞지 않을경우 에러가 발생한다.
+SELECT * FROM TEST4;
+
+-- UPDATE
+/*
+이미 저장된 데이터를 수정하고 싶을 때 사용하는 명령어이다. 수정하고 싶은 컬럼이 많다면
+SET절에 , (콤마)로 이어서 명시해줄 수 있다(SET 컬럼명1 = 데이터, 컬럼명2 = 데이터 ...).
+WHERE 절이 없으면 테이블의 모든 Row가 변경되니 주의해야 한다.
+*/
+-- UPDATE 테이블명 SET 컬럼명 = 새로운 데이터 (WHERE 수정할 데이터에 대한 조건);
+UPDATE TEST4 SET COL1 = 'ABC' WHERE COL2 = 'B';
+SELECT * FROM TEST4;
+UPDATE TEST4 SET COL1 = 'ABC';
+SELECT * FROM TEST4;
+
+-- DELETE
+-- 이미 저장된 데이터를 삭제하고 싶을 때 사용하는 명령어. WHERE 절이 없으면 테이블의 모든 Row가 삭제되니 주의해야 한다.
+-- DELETE FROM 테이블명 (WHERE 수정할 데이터에 대한 조건);
+
+DELETE FROM TEST4 WHERE COL1 = 'ABC';
+SELECT * FROM TEST4;
+INSERT INTO TEST4 (COL1, COL2) VALUES('A', 'B');
+INSERT INTO TEST4 VALUES('C', 'D');
+DELETE FROM TEST4 WHERE COL2 = 'D';
+
+/*
+WHERE 절 없이 테이블 전체 데이터를 삭제하고자 하는 경우 TRUNCATE 명령어를 사용할 수도 있고
+시스템 부하 측면에서도 유리하다. 대신 TRUNCATE는 별도의 로그를 쌓지 않아 ROLLBACK이 불가능하며
+DELETE는 COMMIT 전에 ROLLBACK이 가능하다.
+*/
+TRUNCATE TABLE TEST4;
+SELECT * FROM TEST4;
+
+-- INSERT, UPDATE, DELETE
+-- 명령어를 실행하고 별도의 COMMIT 명령어를 실행시켜주어야 데이터가 반영되며 ROLLBACK도 가능하다.
+
+-- MERGE
+-- 테이블에 새로운 데이터를 입력하거나 이미 저장되어 있는 데이터에 대한 변경 작업을 한 번에 할 수 있또록 해주는 명령어
+/*
+MERGE
+    INTO 타겟 테이블명
+USING 비교 테이블명
+        ON 조건
+    WHEN MATCHDE THEN
+        UPDATE
+            SET 컬럼명 = 새로운 데이터 [, 컬럼명 = 새로운 데이터 ...]
+    WHEN NOT MATCHED THEN
+        INSERT [(컬럼명1, 컬럼명2 ...)]
+        VALUES (데이터1, 데이터2 ...);
+*/
+
+MERGE
+    INTO DEPARTMENTS_BACKUP DB
+    -- DEPARTMENTS_BACKUP 테이블의 데이터를 변경 또는 생성
+USING DEPARTMENTS D
+-- 변경 또는 생성할 때 DEPARTMENTS 테이블 이용
+        ON (DB.DEPARTMENT_ID = D.DEPARTMENT_ID)
+        -- DEPARTMENTS_BACKUP 과 DEPARTMENTS 테이블의 ID 동일한 값 조건
+    WHEN MATCHED THEN
+        UPDATE
+            SET DB.DEPARTMENT_NAME = D,DEPARTMENT_NAME,
+                DB.MANAGER_ID = D.MANAGER_ID
+                DB.LOCATION_ID = D.LOCATION_ID
+                -- 조건에 맞는 데이터가 있으면 SET~과 같이 변경
+    WHEN NOT MATCHED THEN
+        INSERT (DB.DEPARTMENT_ID, DB.DEPARTMENT_NAME, DB.MANAGER_ID, DB.LOCATION_ID)
+        VALUES (D.DEPARTMENT_ID, D.DEPARTMENT_NAME, D.MANAGER_ID, D.LOCATION_ID);
+        -- 조건에 맞는 데이터가 없으면 INSERT ~ 컬럼에 VALUES ~ 데이터를 생성
+
+MERGE
+    INTO DEPARTMENTS_BACKUP DB
+    -- DEPARTMENTS_BACKUP 테이블의 데이터를 변경 또는 생성
+USING (SELECT * FROM DEPARTMENTS WHERE MANAGER_ID IS NOT NULL) D
+-- 변경 또는 생성할 때 DEPARTMENTS 테이블의 MANAGER_ID가 NULL이 아닌 데이터 테이블을 이용
+        ON (DB.DEPARTMENT_ID = D.DEPARTMENT_ID)
+        -- DEPARTMENTS_BACKUP 과 DEPARTMENTS 테이블의 ID 동일한 값 조건
+    WHEN MATCHED THEN
+        UPDATE
+            SET DB.DEPARTMENT_NAME = D,DEPARTMENT_NAME,
+                DB.MANAGER_ID = D.MANAGER_ID
+                DB.LOCATION_ID = D.LOCATION_ID
+                -- 조건에 맞는 데이터가 있으면 SET~과 같이 변경
+    WHEN NOT MATCHED THEN
+        INSERT (DB.DEPARTMENT_ID, DB.DEPARTMENT_NAME, DB.MANAGER_ID, DB.LOCATION_ID)
+        VALUES (D.DEPARTMENT_ID, D.DEPARTMENT_NAME, D.MANAGER_ID, D.LOCATION_ID);
+        -- 조건에 맞는 데이터가 없으면 INSERT ~ 컬럼에 VALUES ~ 데이터를 생성
+
+-- WHEN MATCHDE THEN 혹은 WHEN NOT MATCHDE THEN 구문중 하나만 선택해서 사용 가능
