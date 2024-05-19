@@ -1,0 +1,95 @@
+/*
+FISH_INFO 테이블에서 2021년도에 잡은 물고기 수를 출력하는 SQL 문을 작성해주세요.
+
+이 때 컬럼명은 'FISH_COUNT' 로 지정해주세요.
+*/
+
+SELECT COUNT(*) AS FISH_COUNT
+FROM FISH_INFO
+WHERE TIME LIKE '2021%';
+
+/*
+잡은 물고기 중 길이가 10cm 이하인 물고기의 수를 출력하는 SQL 문을 작성해주세요.
+
+물고기의 수를 나타내는 컬럼 명은 FISH_COUNT로 해주세요.
+
+단, 잡은 물고기의 길이가 10cm 이하일 경우에는 LENGTH 가 NULL 이며, LENGTH 에 NULL 만 있는 경우는 없습니다.
+*/
+
+SELECT COUNT(*) AS FISH_COUNT
+FROM FISH_INFO
+WHERE LENGTH IS NULL;
+
+/*
+CAR_RENTAL_COMPANY_CAR 테이블에서 '네비게이션' 옵션이 포함된 자동차 리스트를 출력하는 SQL문을 작성해주세요. 결과는 자동차 ID를 기준으로 내림차순 정렬해주세요.
+*/
+
+SELECT *
+FROM CAR_RENTAL_COMPANY_CAR
+WHERE OPTIONS LIKE '%네비게이션%'
+ORDER BY CAR_ID DESC;
+
+/*
+CAR_RENTAL_COMPANY_RENTAL_HISTORY 테이블에서 
+대여 시작일이 2022년 9월에 속하는 대여 기록에 대해서 대여 기간이 30일 이상이면 '장기 대여' 그렇지 않으면 '단기 대여' 로 표시하는 컬럼(컬럼명: RENT_TYPE)을 추가하여 대여기록을 출력하는 SQL문을 작성해주세요.
+결과는 대여 기록 ID를 기준으로 내림차순 정렬해주세요.
+*/
+SELECT HISTORY_ID, CAR_ID,
+DATE_FORMAT(START_DATE, '%Y-%m-%d') AS START_DATE,
+DATE_FORMAT(END_DATE, '%Y-%m-%d') AS END_DATE,
+IF(DATEDIFF(END_DATE, START_DATE) >= 29, '장기 대여', '단기 대여') AS RENT_TYPE
+FROM CAR_RENTAL_COMPANY_RENTAL_HISTORY
+WHERE START_DATE LIKE '2022-09%'
+ORDER BY HISTORY_ID DESC;
+
+/*
+상반기 아이스크림 총주문량이 3,000보다 높으면서 아이스크림의 주 성분이 과일인 아이스크림의 맛을 총주문량이 큰 순서대로 조회하는 SQL 문을 작성해주세요.
+*/
+
+SELECT FH.FLAVOR
+FROM FIRST_HALF AS FH
+JOIN ICECREAM_INFO AS INFO
+ON FH.FLAVOR = INFO.FLAVOR
+WHERE INGREDIENT_TYPE LIKE 'fruit%' AND TOTAL_ORDER > 3000
+ORDER BY TOTAL_ORDER DESC;
+
+/*
+상반기에 판매된 아이스크림의 맛을 총주문량을 기준으로 내림차순 정렬하고 총주문량이 같다면 출하 번호를 기준으로 오름차순 정렬하여 조회하는 SQL 문을 작성해주세요.
+*/
+SELECT FLAVOR
+FROM FIRST_HALF
+ORDER BY TOTAL_ORDER DESC, SHIPMENT_ID ASC;
+
+/*
+DOCTOR 테이블에서 진료과가 흉부외과(CS)이거나 일반외과(GS)인 의사의 이름, 의사ID, 진료과, 고용일자를 조회하는 SQL문을 작성해주세요. 
+이때 결과는 고용일자를 기준으로 내림차순 정렬하고, 고용일자가 같다면 이름을 기준으로 오름차순 정렬해주세요.
+*/
+SELECT DR_NAME, DR_ID, MCDP_CD,
+DATE_FORMAT(HIRE_YMD, '%Y-%m-%d') AS HIRE_YMD
+FROM DOCTOR
+WHERE MCDP_CD = 'CS' OR MCDP_CD = 'GS'
+ORDER BY HIRE_YMD DESC, DR_NAME ASC;
+
+/*
+FOOD_FACTORY 테이블에서 강원도에 위치한 식품공장의 공장 ID, 공장 이름, 주소를 조회하는 SQL문을 작성해주세요.
+이때 결과는 공장 ID를 기준으로 오름차순 정렬해주세요.
+*/
+SELECT FACTORY_ID, FACTORY_NAME, ADDRESS
+FROM FOOD_FACTORY
+WHERE ADDRESS LIKE '강원도%'
+ORDER BY FACTORY_ID;
+
+/*
+동물 보호소에 들어온 모든 동물의 이름과 보호 시작일을 조회하는 SQL문을 작성해주세요. 
+이때 결과는 ANIMAL_ID 역순으로 보여주세요.
+*/
+SELECT NAME, DATETIME
+FROM ANIMAL_INS
+ORDER BY ANIMAL_ID DESC;
+
+/*
+동물 보호소에 들어온 모든 동물의 정보를 ANIMAL_ID순으로 조회하는 SQL문을 작성해주세요. 
+*/
+SELECT *
+FROM ANIMAL_INS
+ORDER BY ANIMAL_ID;
