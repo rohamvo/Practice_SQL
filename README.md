@@ -6,4 +6,6 @@ Practice of SQL
 ![SQL4](https://github.com/rohamvo/Practice_SQL/assets/117894782/fbe32561-72c6-487f-88fc-ae837b930f7f)
 ![SQL5](https://github.com/rohamvo/Practice_SQL/assets/117894782/53b34f38-ae7a-41a2-b1e7-b72880ac1da8)
 ![SQL1](https://github.com/rohamvo/Practice_SQL/assets/117894782/2229f645-334d-4776-affe-9013e334a1be)
+
+
 2024-06-04 모든 문제 완료
